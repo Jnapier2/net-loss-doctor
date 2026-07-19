@@ -2,11 +2,11 @@
 
 [![PowerShell checks](https://github.com/Jnapier2/net-loss-doctor/actions/workflows/powershell-static.yml/badge.svg)](https://github.com/Jnapier2/net-loss-doctor/actions/workflows/powershell-static.yml)
 
-NetLossDoctor is a transparent Windows PowerShell diagnostic that turns packet-loss complaints into a structured, time-bounded evidence bundle. It correlates local adapter state, routes, DNS, latency, Windows networking events, and optional deep traces without changing network configuration.
+NetLossDoctor turns intermittent connectivity complaints into a consistent, time-bounded evidence package for support triage. It correlates endpoint, route, DNS, latency, Windows event, and optional trace data without changing network configuration, giving teams a clearer basis for deciding whether to investigate the device, local network, or upstream provider.
 
 ## Why it exists
 
-Intermittent network problems are difficult to reproduce and easy to misdiagnose. A single ping cannot distinguish a local adapter problem from Wi-Fi interference, DNS failure, a router issue, or upstream loss. NetLossDoctor collects comparable evidence and produces a concise scorecard plus a redacted support archive.
+Intermittent failures often disappear before support can inspect them, while a single ping rarely identifies the responsible layer. NetLossDoctor captures comparable evidence across runs, summarizes it in a concise scorecard, and creates a redacted archive for safer handoff to internal teams, vendors, or an ISP.
 
 Diagnostic coverage:
 
