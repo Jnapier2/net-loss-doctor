@@ -1,0 +1,24 @@
+# Generated diagnostic data
+exports/
+reports/
+diag/
+diagnostics/
+*.etl
+*.pcap
+*.pcapng
+*.zip
+*.log
+
+# Local configuration and operating-system files
+.env
+.env.*
+!.env.example
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~

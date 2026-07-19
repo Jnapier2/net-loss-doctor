@@ -1,0 +1,15 @@
+{
+  "schema": "netlossdoctor-synthetic-example-v1",
+  "synthetic": true,
+  "mode": "standard",
+  "host": "WORKSTATION-DEMO",
+  "active_adapter": "Ethernet (synthetic)",
+  "gateway": "192.0.2.1",
+  "dns_servers": ["192.0.2.53"],
+  "gateway_loss_percent": 0.0,
+  "external_loss_percent": 0.5,
+  "external_latency_p95_ms": 31.4,
+  "pktmon": "not_enabled",
+  "netsh_trace": "not_enabled",
+  "interpretation": "Synthetic example only; values do not represent a real host or network."
+}
