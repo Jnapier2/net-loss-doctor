@@ -8,6 +8,8 @@ NetLossDoctor turns intermittent connectivity complaints into a consistent, time
 
 Intermittent failures often disappear before support can inspect them, while a single ping rarely identifies the responsible layer. NetLossDoctor captures comparable evidence across runs, summarizes it in a concise scorecard, and creates a redacted archive for safer handoff to internal teams, vendors, or an ISP.
 
+Its useful signal is often the disagreement between layers: a healthy gateway beside degraded public latency points the investigation differently than concurrent gateway loss, while DNS and TCP results help separate name resolution from reachability. The tool preserves those distinctions instead of collapsing them into one pass/fail verdict.
+
 Diagnostic coverage:
 
 - Bounded command execution and cleanup for long-running Windows diagnostics.
@@ -73,6 +75,8 @@ Use `Start-NetLossDoctor.cmd` as a convenience wrapper; with no arguments it ret
 | `-NetshTrace` | ETL network trace | Yes | Optional deep Windows trace |
 
 Reports are written beneath `exports/NetLossDoctor_Reports` by default. Use `-ReportsRoot` to select a different writable location.
+
+Modes act as bounded operating profiles; explicit parameters control deeper capture, observation, load generation, rate limiting, and report location without editing the script.
 
 Compare recent result bundles with:
 
