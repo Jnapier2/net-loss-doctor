@@ -2314,7 +2314,7 @@ function New-AutoDiagProgramStateFile {
         if ([string]::IsNullOrWhiteSpace($root) -and $PSCommandPath) { $root = Split-Path -Parent $PSCommandPath }
         $lines.Add('===== TOOL FILE INVENTORY =====') | Out-Null
         if ($root -and (Test-Path -LiteralPath $root)) {
-            $toolFiles = @(Get-ChildItem -LiteralPath $root -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^(NetLossDoctor|Compare-NetLossDoctorReports|Start-NetLossDoctor|README|SECURITY|LICENSE|CHANGELOG)' } | Sort-Object Name)
+            $toolFiles = @(Get-ChildItem -LiteralPath $root -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^(NetLossDoctor|Compare-NetLossDoctorReports|Start-NetLossDoctor|README|SECURITY|LICENSE)' } | Sort-Object Name)
             foreach ($f in $toolFiles) {
                 $hash = ''
                 try { $hash = (Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256 -ErrorAction Stop).Hash } catch { $hash = 'hash_unavailable' }
@@ -2328,8 +2328,7 @@ function New-AutoDiagProgramStateFile {
         $releaseSnapshotNames = @(
             'README.md',
             'SECURITY.md',
-            'LICENSE.md',
-            'CHANGELOG.md'
+            'LICENSE.md'
         )
         foreach ($releaseName in $releaseSnapshotNames) {
             $releasePath = Join-Path $root $releaseName
