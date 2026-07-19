@@ -8,7 +8,7 @@ NetLossDoctor is a transparent Windows PowerShell diagnostic that turns packet-l
 
 Intermittent network problems are difficult to reproduce and easy to misdiagnose. A single ping cannot distinguish a local adapter problem from Wi-Fi interference, DNS failure, a router issue, or upstream loss. NetLossDoctor collects comparable evidence and produces a concise scorecard plus a redacted support archive.
 
-Engineering highlights:
+Diagnostic coverage:
 
 - Bounded command execution and cleanup for long-running Windows diagnostics.
 - Correlated gateway, first-hop, public endpoint, DNS, TCP, MTU, and event-log evidence.

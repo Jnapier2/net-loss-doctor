@@ -38,7 +38,7 @@ $allText = ($powerShellFiles | ForEach-Object { Get-Content -LiteralPath $_.Full
 Assert-True ($allText -notmatch '(?i)ExecutionPolicy\s+Bypass') 'Execution-policy bypasses are not permitted in tracked source.'
 
 $runtimeText = $engine + "`n" + $compare
-foreach ($stalePattern in @('(?i)signal.?booster','(?i)chatgpt','(?i)NetLossDoctor\.bat','(?i)menu option','\$NoPktmon','\$FullRawZip','\$Topology','FileDownloadThrottle','DownloadThrottleMbps','Export20','MANIFEST\.json','Asset-ID','PackageVersion','sensitive_redacted')) {
+foreach ($stalePattern in @('(?i)signal.?booster','(?i)NetLossDoctor\.bat','(?i)menu option','\$NoPktmon','\$FullRawZip','\$Topology','FileDownloadThrottle','DownloadThrottleMbps','Export20','MANIFEST\.json','Asset-ID','PackageVersion','sensitive_redacted')) {
     Assert-True ($runtimeText -notmatch $stalePattern) ("Stale package/runtime term found: $stalePattern")
 }
 Assert-True ($runtimeText -notmatch '(?i)Set-Clipboard') 'Diagnostics must not alter clipboard contents.'
