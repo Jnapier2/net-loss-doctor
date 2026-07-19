@@ -1,5 +1,7 @@
 # NetLossDoctor
 
+[![PowerShell checks](https://github.com/Jnapier2/net-loss-doctor/actions/workflows/powershell-static.yml/badge.svg)](https://github.com/Jnapier2/net-loss-doctor/actions/workflows/powershell-static.yml)
+
 NetLossDoctor is a transparent Windows PowerShell diagnostic that turns packet-loss complaints into a structured, time-bounded evidence bundle. It correlates local adapter state, routes, DNS, latency, Windows networking events, and optional deep traces without changing network configuration.
 
 ## Why it exists
@@ -89,13 +91,13 @@ The file in `examples/` is synthetic and contains no real host or network inform
 ## Validation
 
 ```powershell
-powershell.exe -NoProfile -File .\tests\Test-PublicSafety.ps1
+powershell.exe -NoProfile -File .\tests\Test-SafetyContracts.ps1
 ```
 
-CI parses every PowerShell file, exercises synthetic redaction cases, mocks capture cleanup, and enforces the public safety invariants: local self-test is the default, captures are opt-in and bounded by `finally`, clipboard and execution-policy changes are absent, and common system-mutating networking cmdlets are not present.
+CI parses every PowerShell file, exercises synthetic redaction cases, mocks capture cleanup, and enforces the safety invariants: local self-test is the default, captures are opt-in and bounded by `finally`, clipboard and execution-policy changes are absent, and common system-mutating networking cmdlets are not present.
 
 ## Project status
 
-This portfolio release is a Windows-focused diagnostic and has not been independently security audited. Network equipment can suppress or deprioritize ICMP, so intermediate-hop loss alone is not proof of an outage. The tool provides evidence for analysis; it does not replace vendor or ISP instrumentation.
+NetLossDoctor v2.10.0 is a Windows-focused diagnostic and has not been independently security audited. Network equipment can suppress or deprioritize ICMP, so intermediate-hop loss alone is not proof of an outage. The tool provides evidence for analysis; it does not replace vendor or ISP instrumentation.
 
 Copyright (c) 2026 Gateway Information Group LLC. See [LICENSE.md](LICENSE.md).

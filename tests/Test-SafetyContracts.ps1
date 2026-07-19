@@ -35,13 +35,13 @@ Assert-True ($engine -match '(?s)function Stop-NetshTraceSession.+?finally\s*\{.
 Assert-True ($engine -match '(?s)try\s*\{\s*\$pktmonState = Start-PktmonSession.+?\$netshTraceState = Start-NetshTraceSession.+?finally\s*\{\s*try \{ \$pktmonState = Stop-PktmonSession.+?try \{ \$netshTraceState = Stop-NetshTraceSession') 'The capture lifecycle must remain enclosed by outer try/finally cleanup.'
 
 $allText = ($powerShellFiles | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join "`n"
-Assert-True ($allText -notmatch '(?i)ExecutionPolicy\s+Bypass') 'Execution-policy bypasses are not permitted in the public repository.'
+Assert-True ($allText -notmatch '(?i)ExecutionPolicy\s+Bypass') 'Execution-policy bypasses are not permitted in tracked source.'
 
-$publicRuntimeText = $engine + "`n" + $compare
+$runtimeText = $engine + "`n" + $compare
 foreach ($stalePattern in @('(?i)signal.?booster','(?i)chatgpt','(?i)NetLossDoctor\.bat','(?i)menu option','\$NoPktmon','\$FullRawZip','\$Topology','FileDownloadThrottle','DownloadThrottleMbps','Export20','MANIFEST\.json','Asset-ID','PackageVersion','sensitive_redacted')) {
-    Assert-True ($publicRuntimeText -notmatch $stalePattern) ("Stale private/runtime term found: $stalePattern")
+    Assert-True ($runtimeText -notmatch $stalePattern) ("Stale package/runtime term found: $stalePattern")
 }
-Assert-True ($publicRuntimeText -notmatch '(?i)Set-Clipboard') 'Diagnostics must not alter clipboard contents.'
+Assert-True ($runtimeText -notmatch '(?i)Set-Clipboard') 'Diagnostics must not alter clipboard contents.'
 Assert-True ($engine -match 'Sensitivity: support-redacted') 'Generated support metadata must remain labeled support-redacted.'
 Assert-True ($engine -match 'EXPORT_CONTENTS\.txt') 'Support archives must retain a plain-language contents file.'
 
@@ -61,7 +61,7 @@ foreach ($name in $forbiddenCommands) {
 }
 
 # Load only the redactor and cleanup functions from the parsed source. This tests the
-# public safety primitives without executing the diagnostic or changing policy.
+# safety primitives without executing the diagnostic or changing policy.
 foreach ($functionName in @('Redact-NldExportText','Stop-PktmonSession','Stop-NetshTraceSession')) {
     $definition = $ast.Find({
         param($node)
@@ -76,10 +76,10 @@ $runDir = Join-Path $repo 'synthetic-report-path'
 $oldUser = $env:USERNAME
 $oldComputer = $env:COMPUTERNAME
 try {
-    $env:USERNAME = 'PortfolioUserFixture'
-    $env:COMPUTERNAME = 'PORTFOLIO-HOST-FIXTURE'
+    $env:USERNAME = 'SyntheticUserFixture'
+    $env:COMPUTERNAME = 'SYNTHETIC-HOST-FIXTURE'
     # Assemble the synthetic Windows profile path at runtime so the repository
-    # never contains a publishable user-shaped absolute path literal.
+    # never contains a real user-shaped absolute path literal.
     $fixtureUserPath = 'C:' + '\Users\' + $env:USERNAME
     $fixture = @"
 IPv4A=10.23.45.67
@@ -91,11 +91,11 @@ Path=$fixtureUserPath\Documents\private.txt
 MAC=00-11-22-33-44-55
 SSID=Private Lab WiFi
 BSSID=66:77:88:99:aa:bb
-UserName=PortfolioUserFixture
-ComputerName=PORTFOLIO-HOST-FIXTURE
+UserName=SyntheticUserFixture
+ComputerName=SYNTHETIC-HOST-FIXTURE
 "@
     $redacted = Redact-NldExportText -Text $fixture
-    foreach ($secret in @('10.23.45.67','172.16.9.8','192.168.44.55','2001:db8::1234','fe80::abcd%12',$fixtureUserPath,'00-11-22-33-44-55','Private Lab WiFi','66:77:88:99:aa:bb','PortfolioUserFixture','PORTFOLIO-HOST-FIXTURE')) {
+    foreach ($secret in @('10.23.45.67','172.16.9.8','192.168.44.55','2001:db8::1234','fe80::abcd%12',$fixtureUserPath,'00-11-22-33-44-55','Private Lab WiFi','66:77:88:99:aa:bb','SyntheticUserFixture','SYNTHETIC-HOST-FIXTURE')) {
         Assert-True ($redacted -notmatch [Regex]::Escape($secret)) ("Redaction leaked fixture value: $secret")
     }
     foreach ($marker in @('<PRIVATE_IP_REDACTED>','<IPV6_REDACTED>','<LOCAL_PATH>','<MAC_REDACTED>','<SSID_REDACTED>','<USER_REDACTED>','<COMPUTER_REDACTED>')) {
@@ -171,4 +171,4 @@ $netshState = Stop-NetshTraceSession -State $netshState
 Assert-True ($netshState.Started) 'netsh state must remain active when both primary and retry stops time out.'
 Assert-True (@($script:CleanupCalls | Where-Object Name -eq 'netsh_trace_finally_stop').Count -eq 1) 'netsh timeout did not trigger the cleanup retry.'
 
-Write-Host ("PASS: parsed {0} PowerShell files and verified public safety invariants." -f $powerShellFiles.Count) -ForegroundColor Green
+Write-Host ("PASS: parsed {0} PowerShell files and verified safety invariants." -f $powerShellFiles.Count) -ForegroundColor Green

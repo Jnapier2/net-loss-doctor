@@ -1,4 +1,4 @@
-# NetLossDoctor v2.10.0 - public portfolio edition
+# NetLossDoctor v2.10.0
 # Read-only Windows network diagnostics with bounded, redacted support exports.
 
 param(
@@ -2324,7 +2324,7 @@ function New-AutoDiagProgramStateFile {
             $lines.Add('Tool folder not available.') | Out-Null
         }
         $lines.Add('') | Out-Null
-        $lines.Add('===== PUBLIC DOCUMENTATION SNAPSHOTS =====') | Out-Null
+        $lines.Add('===== DOCUMENTATION SNAPSHOTS =====') | Out-Null
         $releaseSnapshotNames = @(
             'README.md',
             'SECURITY.md',
@@ -2576,7 +2576,7 @@ function New-SupportZip {
         [switch]$Emergency
     )
     # Ten is the smallest safe physical archive: nine recovery-critical files plus
-    # EXPORT_CONTENTS.txt. The public contract remains a hard maximum of 20 files.
+    # EXPORT_CONTENTS.txt. The export contract remains a hard maximum of 20 files.
     $max = [Math]::Min(20, [Math]::Max(10, $MaxFiles))
     $effectiveMax = $max - 1 # reserve one slot for EXPORT_CONTENTS.txt
     $stageDir = Join-Path $RunDir '_SUPPORT_EXPORT'
