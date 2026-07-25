@@ -2,6 +2,8 @@
 
 [![PowerShell checks](https://github.com/Jnapier2/net-loss-doctor/actions/workflows/powershell-static.yml/badge.svg)](https://github.com/Jnapier2/net-loss-doctor/actions/workflows/powershell-static.yml)
 
+[Portfolio](https://jerry-napier-portfolio.netlify.app/) · [GitHub profile](https://github.com/Jnapier2)
+
 NetLossDoctor turns intermittent connectivity complaints into a consistent, time-bounded evidence package for support triage. It correlates endpoint, route, DNS, latency, Windows event, and optional trace data without changing network configuration, giving teams a clearer basis for deciding whether to investigate the device, local network, or upstream provider.
 
 ## Why it exists
@@ -104,4 +106,4 @@ CI parses every PowerShell file, exercises synthetic redaction cases, mocks capt
 
 NetLossDoctor v2.10.0 is a Windows-focused diagnostic and has not been independently security audited. Network equipment can suppress or deprioritize ICMP, so intermediate-hop loss alone is not proof of an outage. The tool provides evidence for analysis; it does not replace vendor or ISP instrumentation.
 
-Copyright (c) 2026 Gateway Information Group LLC. See [LICENSE.md](LICENSE.md).
+Copyright © 2026 Gateway Information Group LLC. All rights reserved. See [LICENSE.md](LICENSE.md).
