@@ -21,7 +21,7 @@ param(
 )
 
 $Script:Version = '2.10.0'
-$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-01'
+$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-02'
 $Script:ParameterBaseline = '2.17.6'
 $Script:ProjectSlug = 'netlossdoctor'
 $Script:ReleaseStatus = 'current'

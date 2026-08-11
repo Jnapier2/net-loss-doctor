@@ -3,7 +3,7 @@
   "project": "NetLossDoctor",
   "project_slug": "net-loss-doctor",
   "version": "2.10.0",
-  "build_id": "NLD-2.10.0-PUBLIC-20260810-01",
+  "build_id": "NLD-2.10.0-PUBLIC-20260810-02",
   "status": "current-public-source",
   "parameter_baseline": "2.17.6",
   "parameter_package_sha256": "5dd39656afa5e8bcd0159e5ffa163d4de92a9ad4cb05c26aa63acf424ffe371f",
@@ -24,5 +24,8 @@
   "elevation_required": false,
   "rights_holder": "Gateway Information Group LLC",
   "rights_notice": "Copyright © 2026 Gateway Information Group LLC. All rights reserved.",
-  "third_party_notice": "Windows and PowerShell remain subject to their respective terms."
+  "third_party_notice": "Windows and PowerShell remain subject to their respective terms.",
+  "comparison_helper": "Compare-NetLossDoctorReports.ps1",
+  "comparison_root_resolution": "validated NLD_HOME override or comparison-script location; caller CWD is not authority",
+  "relative_reports_root_policy": "rebase_from_resolved_project_root"
 }

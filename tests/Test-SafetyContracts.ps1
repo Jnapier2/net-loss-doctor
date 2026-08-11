@@ -27,9 +27,11 @@ $compare = Get-Content -LiteralPath $comparePath -Raw
 $metadataPath = Join-Path $repo 'PUBLIC_SOURCE_METADATA.json'
 Assert-True (Test-Path -LiteralPath $metadataPath -PathType Leaf) 'Public source metadata is missing.'
 $publicMetadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
-Assert-True ($publicMetadata.build_id -eq 'NLD-2.10.0-PUBLIC-20260810-01') 'Public source build ID changed.'
+Assert-True ($publicMetadata.build_id -eq 'NLD-2.10.0-PUBLIC-20260810-02') 'Public source build ID changed.'
 Assert-True ($publicMetadata.canonical_entrypoint -eq 'Start-NetLossDoctor.cmd') 'Canonical entrypoint metadata changed.'
 Assert-True ($publicMetadata.backend_target -eq 'NetLossDoctor.ps1') 'Backend-target metadata changed.'
+Assert-True ($publicMetadata.comparison_helper -eq 'Compare-NetLossDoctorReports.ps1') 'Comparison-helper metadata changed.'
+Assert-True ($publicMetadata.relative_reports_root_policy -eq 'rebase_from_resolved_project_root') 'Relative report-root policy changed.'
 Assert-True (@($publicMetadata.runtime_owned_output_roots) -contains 'exports/NetLossDoctor_Reports') 'Project-local output metadata changed.'
 Assert-True ($publicMetadata.output_failure_policy -eq 'fail_closed_no_cwd_desktop_or_os_temp_final_output_fallback') 'Output failure policy changed.'
 Assert-True ($publicMetadata.runtime_identity_gate.status -eq 'not_implemented_in_public_v2.10.0_source') 'Runtime identity claim boundary changed.'
@@ -53,12 +55,17 @@ foreach ($stalePattern in @('(?i)signal.?booster','(?i)NetLossDoctor\.bat','(?i)
 Assert-True ($runtimeText -notmatch '(?i)Set-Clipboard') 'Diagnostics must not alter clipboard contents.'
 Assert-True ($engine -match 'Sensitivity: support-redacted') 'Generated support metadata must remain labeled support-redacted.'
 Assert-True ($engine -match 'EXPORT_CONTENTS\.txt') 'Support archives must retain a plain-language contents file.'
-Assert-True ($engine -match "\$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-01'") 'Transparent public build ID is missing.'
+Assert-True ($engine -match "\$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-02'") 'Transparent public build ID is missing.'
 Assert-True ($engine -notmatch 'current_working_directory_fallback') 'Caller CWD must not be project-root authority.'
 Assert-True ($engine -notmatch '\$baseDir = Join-Path \$desktop ''NetLossDoctor_Reports''') 'Desktop must not be a final-output fallback.'
 Assert-True ($engine -notmatch '\$baseDir = Join-Path \$env:TEMP ''NetLossDoctor_Reports''') 'OS temp must not be a final-output fallback.'
 Assert-True ($engine -match 'No Desktop or OS-temp fallback will be used') 'Fail-closed output error is missing.'
 Assert-True ($engine -match 'New-Item -ItemType Directory -Path \$Path -Force -ErrorAction Stop') 'Directory creation must be terminating so fail-closed handling can run.'
+Assert-True ($compare -match "\$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-02'") 'Comparison helper build ID is missing.'
+Assert-True ($compare -notmatch '\(Get-Location\)\.Path') 'Comparison helper must not use caller CWD as project-root authority.'
+Assert-True ($compare -match '\[IO\.Path\]::IsPathRooted\(\$ReportsPath\)') 'Relative comparison paths must be identified before rebasing.'
+Assert-True ($compare -match 'New-Item -ItemType Directory -Path \$ReportsPath -Force -ErrorAction Stop') 'Comparison output creation must be terminating.'
+Assert-True ($compare -match 'No caller-CWD, Desktop, or OS-temp fallback will be used') 'Comparison fail-closed output error is missing.'
 
 $forbiddenCommands = @(
     'Set-NetAdapter', 'Disable-NetAdapter', 'Enable-NetAdapter', 'Restart-NetAdapter',
@@ -205,6 +212,31 @@ try {
     Set-Location -LiteralPath $oldLocation.Path
     $env:NLD_HOME = $oldNldHome
     Remove-Item -LiteralPath $crossCwd -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+$compareFixtureRoot = Join-Path ([IO.Path]::GetTempPath()) ('NetLossDoctor_CompareRoot_' + [guid]::NewGuid().ToString('N'))
+$compareToolRoot = Join-Path $compareFixtureRoot 'tool-root'
+$compareCallerRoot = Join-Path $compareFixtureRoot 'caller-root'
+$oldLocation = Get-Location
+$oldNldHome = $env:NLD_HOME
+try {
+    New-Item -ItemType Directory -Path $compareToolRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path $compareCallerRoot -Force | Out-Null
+    Copy-Item -LiteralPath $comparePath -Destination (Join-Path $compareToolRoot 'Compare-NetLossDoctorReports.ps1') -Force
+    $env:NLD_HOME = Join-Path $compareFixtureRoot 'stale-home'
+    Set-Location -LiteralPath $compareCallerRoot
+    $copiedCompare = Join-Path $compareToolRoot 'Compare-NetLossDoctorReports.ps1'
+    $compareOutput = (& powershell.exe -NoLogo -NoProfile -File $copiedCompare -Days 1 2>&1 | Out-String)
+    $compareExit = $LASTEXITCODE
+    Assert-True ($compareExit -eq 0) ("Cross-working-directory comparison failed with exit code {0}: {1}" -f $compareExit, $compareOutput)
+    $expectedCompareReports = Join-Path (Join-Path $compareToolRoot 'exports') 'NetLossDoctor_Reports'
+    Assert-True (Test-Path -LiteralPath $expectedCompareReports -PathType Container) 'Comparison helper did not create its report root under the copied project folder.'
+    Assert-True (@(Get-ChildItem -LiteralPath $expectedCompareReports -Filter 'NetLossDoctor_Comparison_*.txt' -File).Count -eq 1) 'Comparison helper did not publish one text result under the project-local report root.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $compareCallerRoot 'exports'))) 'Comparison helper wrote output beneath caller CWD.'
+} finally {
+    Set-Location -LiteralPath $oldLocation.Path
+    $env:NLD_HOME = $oldNldHome
+    Remove-Item -LiteralPath $compareFixtureRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host ("PASS: parsed {0} PowerShell files and verified safety invariants." -f $powerShellFiles.Count) -ForegroundColor Green
