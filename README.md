@@ -60,7 +60,7 @@ powershell.exe -NoProfile -File .\NetLossDoctor.ps1 -Mode quick
 powershell.exe -NoProfile -File .\NetLossDoctor.ps1 -Mode standard
 ```
 
-Use `Start-NetLossDoctor.cmd` as a convenience wrapper; with no arguments it retains the safe `doctor` default.
+Use `Start-NetLossDoctor.cmd` as the stable, project-qualified canonical entrypoint. It launches `NetLossDoctor.ps1` from the wrapper's own directory and retains the safe `doctor` default when no arguments are supplied.
 
 ### Modes and explicit options
 
@@ -76,7 +76,7 @@ Use `Start-NetLossDoctor.cmd` as a convenience wrapper; with no arguments it ret
 | `-EnablePktmon` | Packet counters/capture | Yes | Optional local drop evidence |
 | `-NetshTrace` | ETL network trace | Yes | Optional deep Windows trace |
 
-Reports are written beneath `exports/NetLossDoctor_Reports` by default. Use `-ReportsRoot` to select a different writable location.
+Reports are written beneath `exports/NetLossDoctor_Reports` under the resolved project folder by default. Relative `-ReportsRoot` values are rebased from that project folder; an absolute override remains an explicit user-selected external binding. If the selected location cannot be created, the run fails closed instead of writing final output to the caller working directory, Desktop, or operating-system temporary storage.
 
 Modes act as bounded operating profiles; explicit parameters control deeper capture, observation, load generation, rate limiting, and report location without editing the script.
 
@@ -100,7 +100,9 @@ The file in `examples/` is synthetic and contains no real host or network inform
 powershell.exe -NoProfile -File .\tests\Test-SafetyContracts.ps1
 ```
 
-CI parses every PowerShell file, exercises synthetic redaction cases, mocks capture cleanup, and enforces the safety invariants: local self-test is the default, captures are opt-in and bounded by `finally`, clipboard and execution-policy changes are absent, and common system-mutating networking cmdlets are not present.
+CI parses every PowerShell file, exercises synthetic redaction cases, mocks capture cleanup, launches the dry-run path from an unrelated working directory, and enforces the safety invariants: local self-test is the default, captures are opt-in and bounded by `finally`, project-root resolution is launcher/script-derived, final outputs stay project-local unless the user explicitly selects an external root, clipboard and execution-policy changes are absent, and common system-mutating networking cmdlets are not present.
+
+`PUBLIC_SOURCE_METADATA.json` records the public source build, canonical entrypoint, backend target, project-local output roots, explicit external-output boundary, and the remaining runtime-identity limitation without representing this source-only v2.10.0 tree as a sealed executable package.
 
 ## Project status
 
