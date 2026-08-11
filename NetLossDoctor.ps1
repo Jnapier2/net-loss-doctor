@@ -21,6 +21,8 @@ param(
 )
 
 $Script:Version = '2.10.0'
+$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-01'
+$Script:ParameterBaseline = '2.17.6'
 $Script:ProjectSlug = 'netlossdoctor'
 $Script:ReleaseStatus = 'current'
 $Script:NetworkResearchReviewDate = '2026-07-18'
@@ -75,7 +77,10 @@ if ($DryRun) {
     } elseif (-not [string]::IsNullOrWhiteSpace($dryScriptPath)) {
         try { $dryToolRoot = [IO.Path]::GetFullPath((Split-Path -Parent $dryScriptPath)) } catch { $dryToolRoot = Split-Path -Parent $dryScriptPath }
     }
-    if ([string]::IsNullOrWhiteSpace($dryToolRoot)) { $dryToolRoot = (Get-Location).Path }
+    if ([string]::IsNullOrWhiteSpace($dryToolRoot)) {
+        Write-Error 'Unable to resolve the NetLossDoctor project root from NLD_HOME or the script location. No output was created.'
+        exit 24
+    }
     $dryReportsRoot = if ([string]::IsNullOrWhiteSpace($ReportsRoot)) { Join-Path (Join-Path $dryToolRoot 'exports') 'NetLossDoctor_Reports' } else {
         $expanded = [Environment]::ExpandEnvironmentVariables($ReportsRoot.Trim().Trim('"'))
         if ([IO.Path]::IsPathRooted($expanded)) { [IO.Path]::GetFullPath($expanded) } else { [IO.Path]::GetFullPath((Join-Path $dryToolRoot $expanded)) }
@@ -130,7 +135,7 @@ function New-SafeFileName {
 function New-DirectorySafe {
     param([string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) {
-        New-Item -ItemType Directory -Path $Path -Force | Out-Null
+        New-Item -ItemType Directory -Path $Path -Force -ErrorAction Stop | Out-Null
     }
 }
 
@@ -154,7 +159,7 @@ function Resolve-NldFolderPath {
             }
         }
         if (-not [IO.Path]::IsPathRooted($candidate)) {
-            if ([string]::IsNullOrWhiteSpace($BasePath) -or -not (Test-Path -LiteralPath $BasePath)) { $BasePath = (Get-Location).Path }
+            if ([string]::IsNullOrWhiteSpace($BasePath) -or -not (Test-Path -LiteralPath $BasePath)) { return $null }
             $candidate = Join-Path $BasePath $candidate
         }
         return [IO.Path]::GetFullPath($candidate)
@@ -201,8 +206,8 @@ if ([string]::IsNullOrWhiteSpace($toolRoot) -and -not [string]::IsNullOrWhiteSpa
     if ($Script:ToolRootResolutionNote -eq 'not_resolved') { $Script:ToolRootResolutionNote = 'script_location' }
 }
 if ([string]::IsNullOrWhiteSpace($toolRoot) -or -not (Test-Path -LiteralPath $toolRoot)) {
-    $toolRoot = (Get-Location).Path
-    $Script:ToolRootResolutionNote = 'current_working_directory_fallback'
+    Write-Error 'Unable to resolve the NetLossDoctor project root from NLD_HOME or the script location. No report directory was created.'
+    exit 24
 }
 $Script:ToolRoot = $toolRoot
 $Script:ReportsRootInputRaw = $ReportsRoot
@@ -222,13 +227,8 @@ if (-not [string]::IsNullOrWhiteSpace($ReportsRoot)) {
 try {
     New-DirectorySafe $baseDir
 } catch {
-    $desktop = [Environment]::GetFolderPath('Desktop')
-    if ([string]::IsNullOrWhiteSpace($desktop)) { $desktop = $env:TEMP }
-    $baseDir = Join-Path $desktop 'NetLossDoctor_Reports'
-    try { New-DirectorySafe $baseDir } catch {
-        $baseDir = Join-Path $env:TEMP 'NetLossDoctor_Reports'
-        New-DirectorySafe $baseDir
-    }
+    Write-Error ("Unable to create the selected report root '{0}'. No Desktop or OS-temp fallback will be used. {1}" -f $baseDir, $_.Exception.Message)
+    exit 25
 }
 
 $labelSafe = New-SafeFileName $Label

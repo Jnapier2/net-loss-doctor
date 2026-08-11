@@ -24,6 +24,15 @@ $enginePath = Join-Path $repo 'NetLossDoctor.ps1'
 $comparePath = Join-Path $repo 'Compare-NetLossDoctorReports.ps1'
 $engine = Get-Content -LiteralPath $enginePath -Raw
 $compare = Get-Content -LiteralPath $comparePath -Raw
+$metadataPath = Join-Path $repo 'PUBLIC_SOURCE_METADATA.json'
+Assert-True (Test-Path -LiteralPath $metadataPath -PathType Leaf) 'Public source metadata is missing.'
+$publicMetadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+Assert-True ($publicMetadata.build_id -eq 'NLD-2.10.0-PUBLIC-20260810-01') 'Public source build ID changed.'
+Assert-True ($publicMetadata.canonical_entrypoint -eq 'Start-NetLossDoctor.cmd') 'Canonical entrypoint metadata changed.'
+Assert-True ($publicMetadata.backend_target -eq 'NetLossDoctor.ps1') 'Backend-target metadata changed.'
+Assert-True (@($publicMetadata.runtime_owned_output_roots) -contains 'exports/NetLossDoctor_Reports') 'Project-local output metadata changed.'
+Assert-True ($publicMetadata.output_failure_policy -eq 'fail_closed_no_cwd_desktop_or_os_temp_final_output_fallback') 'Output failure policy changed.'
+Assert-True ($publicMetadata.runtime_identity_gate.status -eq 'not_implemented_in_public_v2.10.0_source') 'Runtime identity claim boundary changed.'
 Assert-True ($engine -match "\[string\]\`$Mode\s*=\s*'doctor'") 'Default mode must remain the local doctor self-test.'
 Assert-True ($engine -match '\[switch\]\$EnablePktmon') 'Pktmon must retain an explicit opt-in switch.'
 Assert-True ($engine -match '-Skip:\(-not \$EnablePktmon\)') 'Pktmon must remain skipped unless explicitly enabled.'
@@ -44,6 +53,12 @@ foreach ($stalePattern in @('(?i)signal.?booster','(?i)NetLossDoctor\.bat','(?i)
 Assert-True ($runtimeText -notmatch '(?i)Set-Clipboard') 'Diagnostics must not alter clipboard contents.'
 Assert-True ($engine -match 'Sensitivity: support-redacted') 'Generated support metadata must remain labeled support-redacted.'
 Assert-True ($engine -match 'EXPORT_CONTENTS\.txt') 'Support archives must retain a plain-language contents file.'
+Assert-True ($engine -match "\$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-01'") 'Transparent public build ID is missing.'
+Assert-True ($engine -notmatch 'current_working_directory_fallback') 'Caller CWD must not be project-root authority.'
+Assert-True ($engine -notmatch '\$baseDir = Join-Path \$desktop ''NetLossDoctor_Reports''') 'Desktop must not be a final-output fallback.'
+Assert-True ($engine -notmatch '\$baseDir = Join-Path \$env:TEMP ''NetLossDoctor_Reports''') 'OS temp must not be a final-output fallback.'
+Assert-True ($engine -match 'No Desktop or OS-temp fallback will be used') 'Fail-closed output error is missing.'
+Assert-True ($engine -match 'New-Item -ItemType Directory -Path \$Path -Force -ErrorAction Stop') 'Directory creation must be terminating so fail-closed handling can run.'
 
 $forbiddenCommands = @(
     'Set-NetAdapter', 'Disable-NetAdapter', 'Enable-NetAdapter', 'Restart-NetAdapter',
@@ -170,5 +185,26 @@ $netshState = [PSCustomObject]@{ Started=$true; EtlFile=$null; Notes=@(); Files=
 $netshState = Stop-NetshTraceSession -State $netshState
 Assert-True ($netshState.Started) 'netsh state must remain active when both primary and retry stops time out.'
 Assert-True (@($script:CleanupCalls | Where-Object Name -eq 'netsh_trace_finally_stop').Count -eq 1) 'netsh timeout did not trigger the cleanup retry.'
+
+$crossCwd = Join-Path ([IO.Path]::GetTempPath()) ('NetLossDoctor_CrossCwd_' + [guid]::NewGuid().ToString('N'))
+$oldLocation = Get-Location
+$oldNldHome = $env:NLD_HOME
+try {
+    New-Item -ItemType Directory -Path $crossCwd -Force | Out-Null
+    $env:NLD_HOME = Join-Path $crossCwd 'stale-home'
+    Set-Location -LiteralPath $crossCwd
+    $dryOutput = (& powershell.exe -NoLogo -NoProfile -File $enginePath -Mode standard -DryRun 2>&1 | Out-String)
+    $dryExit = $LASTEXITCODE
+    Assert-True ($dryExit -eq 0) ("Cross-working-directory dry run failed with exit code {0}: {1}" -f $dryExit, $dryOutput)
+    $expectedRoot = [IO.Path]::GetFullPath($repo)
+    $expectedReports = Join-Path (Join-Path $expectedRoot 'exports') 'NetLossDoctor_Reports'
+    Assert-True ($dryOutput -match [Regex]::Escape("Tool root resolved: $expectedRoot")) 'Dry run did not resolve the tool root from the script location.'
+    Assert-True ($dryOutput -match [Regex]::Escape("ReportsRoot resolved: $expectedReports")) 'Dry run did not keep the default report root under the project folder.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $crossCwd 'exports'))) 'Caller CWD received an unexpected output directory.'
+} finally {
+    Set-Location -LiteralPath $oldLocation.Path
+    $env:NLD_HOME = $oldNldHome
+    Remove-Item -LiteralPath $crossCwd -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 Write-Host ("PASS: parsed {0} PowerShell files and verified safety invariants." -f $powerShellFiles.Count) -ForegroundColor Green

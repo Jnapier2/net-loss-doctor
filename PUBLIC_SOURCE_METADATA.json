@@ -1,0 +1,28 @@
+{
+  "schema": "NetLossDoctor.public_source_metadata.v1",
+  "project": "NetLossDoctor",
+  "project_slug": "net-loss-doctor",
+  "version": "2.10.0",
+  "build_id": "NLD-2.10.0-PUBLIC-20260810-01",
+  "status": "current-public-source",
+  "parameter_baseline": "2.17.6",
+  "parameter_package_sha256": "5dd39656afa5e8bcd0159e5ffa163d4de92a9ad4cb05c26aa63acf424ffe371f",
+  "canonical_entrypoint": "Start-NetLossDoctor.cmd",
+  "backend_target": "NetLossDoctor.ps1",
+  "project_root_resolution": "validated NLD_HOME override or launcher/script location; caller CWD is not authority",
+  "runtime_owned_output_roots": [
+    "exports/NetLossDoctor_Reports"
+  ],
+  "external_output_binding": "absolute -ReportsRoot supplied explicitly by the user",
+  "output_failure_policy": "fail_closed_no_cwd_desktop_or_os_temp_final_output_fallback",
+  "runtime_identity_gate": {
+    "status": "not_implemented_in_public_v2.10.0_source",
+    "claim_boundary": "This metadata file does not substitute for VERSION.txt, MANIFEST.json, PACKAGE_METADATA.json, or managed-file startup verification."
+  },
+  "behavior_change": "project-root and final-output containment hardening only",
+  "network_configuration_changes": false,
+  "elevation_required": false,
+  "rights_holder": "Gateway Information Group LLC",
+  "rights_notice": "Copyright © 2026 Gateway Information Group LLC. All rights reserved.",
+  "third_party_notice": "Windows and PowerShell remain subject to their respective terms."
+}
