@@ -5,15 +5,30 @@ param(
     [int]$Days = 45
 )
 $Script:Version = '2.10.0'
+$Script:BuildId = 'NLD-2.10.0-PUBLIC-20260810-02'
 $ErrorActionPreference = 'Continue'
 function New-SafeName([string]$s){ if([string]::IsNullOrWhiteSpace($s)){return 'unknown'}; $x=($s -replace '[^a-zA-Z0-9_.-]+','_').Trim('_'); if($x){$x}else{'unknown'} }
-if ([string]::IsNullOrWhiteSpace($ReportsPath)) {
-    $toolRoot = $env:NLD_HOME
-    if ([string]::IsNullOrWhiteSpace($toolRoot) -or -not (Test-Path -LiteralPath $toolRoot)) { $toolRoot = $PSScriptRoot }
-    if ([string]::IsNullOrWhiteSpace($toolRoot)) { $toolRoot = (Get-Location).Path }
-    $ReportsPath = Join-Path (Join-Path $toolRoot 'exports') 'NetLossDoctor_Reports'
+$toolRoot = $env:NLD_HOME
+if ([string]::IsNullOrWhiteSpace($toolRoot) -or -not (Test-Path -LiteralPath $toolRoot -PathType Container)) { $toolRoot = $PSScriptRoot }
+if ([string]::IsNullOrWhiteSpace($toolRoot) -or -not (Test-Path -LiteralPath $toolRoot -PathType Container)) {
+    Write-Error 'Unable to resolve the NetLossDoctor project root from NLD_HOME or the comparison-script location. No comparison output was created.'
+    exit 24
 }
-if (-not (Test-Path -LiteralPath $ReportsPath)) { New-Item -ItemType Directory -Path $ReportsPath -Force | Out-Null }
+$toolRoot = [IO.Path]::GetFullPath($toolRoot)
+if ([string]::IsNullOrWhiteSpace($ReportsPath)) {
+    $ReportsPath = Join-Path (Join-Path $toolRoot 'exports') 'NetLossDoctor_Reports'
+} elseif (-not [IO.Path]::IsPathRooted($ReportsPath)) {
+    $ReportsPath = Join-Path $toolRoot $ReportsPath
+}
+$ReportsPath = [IO.Path]::GetFullPath($ReportsPath)
+try {
+    if (-not (Test-Path -LiteralPath $ReportsPath -PathType Container)) {
+        New-Item -ItemType Directory -Path $ReportsPath -Force -ErrorAction Stop | Out-Null
+    }
+} catch {
+    Write-Error ("Unable to create the selected comparison report root '{0}'. No caller-CWD, Desktop, or OS-temp fallback will be used. {1}" -f $ReportsPath, $_.Exception.Message)
+    exit 25
+}
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $outTxt = Join-Path $ReportsPath ('NetLossDoctor_Comparison_' + $stamp + '.txt')
 $outCsv = Join-Path $ReportsPath ('NetLossDoctor_Comparison_' + $stamp + '.csv')

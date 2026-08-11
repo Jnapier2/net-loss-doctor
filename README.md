@@ -86,6 +86,8 @@ Compare recent result bundles with:
 powershell.exe -NoProfile -File .\Compare-NetLossDoctorReports.ps1 -ReportsPath .\exports\NetLossDoctor_Reports
 ```
 
+The comparison helper uses the same project-root rule as the collector. A relative `-ReportsPath` is rebased from the helper's project folder, not the caller's working directory; an absolute path remains an explicit user-selected external binding. If the selected location cannot be created, comparison fails closed instead of writing to caller CWD, Desktop, or operating-system temporary storage.
+
 ## Data collected
 
 Depending on mode and Windows permissions, a report may include the computer and user names, OS version, local IP and MAC addresses, gateways, DNS servers, adapter and driver names, routes, Wi-Fi SSID/radio/channel/signal, nearby SSIDs, connection profile, proxy/NCSI state, selected Windows event messages, and probe results. Optional captures can contain substantially more network metadata.
