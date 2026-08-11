@@ -1,0 +1,121 @@
+name: One-use NetLossDoctor comparison-root hardening
+
+on:
+  push:
+    branches:
+      - agent/comparison-root-hardening-20260810
+    paths:
+      - .github/workflows/apply_comparison_root_hardening.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: netlossdoctor-comparison-root-hardening
+  cancel-in-progress: false
+
+jobs:
+  patch-test-and-finalize:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the dedicated hardening branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: agent/comparison-root-hardening-20260810
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      - name: Apply comparison-root hardening
+        run: python .github/scripts/apply_comparison_root_hardening.py
+
+      - name: Remove one-use patch assets
+        shell: pwsh
+        run: |
+          Remove-Item -LiteralPath .github/scripts/apply_comparison_root_hardening.py -Force
+          Remove-Item -LiteralPath .github/workflows/apply_comparison_root_hardening.yml -Force
+
+      - name: Parse source and run complete safety contracts
+        shell: powershell
+        run: .\tests\Test-SafetyContracts.ps1
+
+      - name: Verify final public source metadata and write receipt
+        shell: pwsh
+        run: |
+          @'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path.cwd()
+          metadata = json.loads((root / 'PUBLIC_SOURCE_METADATA.json').read_text(encoding='utf-8'))
+          assert metadata['build_id'] == 'NLD-2.10.0-PUBLIC-20260810-02'
+          assert metadata['comparison_helper'] == 'Compare-NetLossDoctorReports.ps1'
+          assert metadata['comparison_root_resolution'].endswith('caller CWD is not authority')
+          assert metadata['relative_reports_root_policy'] == 'rebase_from_resolved_project_root'
+          assert metadata['output_failure_policy'] == 'fail_closed_no_cwd_desktop_or_os_temp_final_output_fallback'
+          assert not (root / '.github/scripts/apply_comparison_root_hardening.py').exists()
+          assert not (root / '.github/workflows/apply_comparison_root_hardening.yml').exists()
+          receipt = {
+              'schema': 'NetLossDoctor.comparison_root_hardening_receipt.v1',
+              'version': metadata['version'],
+              'build_id': metadata['build_id'],
+              'comparison_helper': metadata['comparison_helper'],
+              'comparison_root_resolution': metadata['comparison_root_resolution'],
+              'relative_reports_root_policy': metadata['relative_reports_root_policy'],
+              'output_failure_policy': metadata['output_failure_policy'],
+              'runtime_identity_gate_status': metadata['runtime_identity_gate']['status'],
+              'parameter_package_sha256': metadata['parameter_package_sha256'],
+              'files': {
+                  name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+                  for name in [
+                      'Compare-NetLossDoctorReports.ps1',
+                      'NetLossDoctor.ps1',
+                      'PUBLIC_SOURCE_METADATA.json',
+                      'README.md',
+                      'tests/Test-SafetyContracts.ps1',
+                  ]
+              },
+              'rights_notice': 'Copyright © 2026 Gateway Information Group LLC. All rights reserved.',
+          }
+          destination = Path(os.environ['RUNNER_TEMP']) / 'NetLossDoctor_v2.10.0_comparison_root_hardening_receipt.json'
+          destination.write_text(json.dumps(receipt, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          print(json.dumps(receipt, indent=2, ensure_ascii=False))
+          '@ | python -
+          git diff --check
+
+      - name: Upload bounded hardening evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.0
+        with:
+          name: netlossdoctor-comparison-hardening-${{ github.run_id }}
+          path: ${{ runner.temp }}/NetLossDoctor_v2.10.0_comparison_root_hardening_receipt.json
+          if-no-files-found: error
+          compression-level: 9
+          retention-days: 14
+
+      - name: Commit only the verified final source tree
+        shell: pwsh
+        run: |
+          git add -A
+          if (git diff --cached --quiet) {
+            throw 'The comparison-root hardening pass produced no reviewable source changes.'
+          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          $body = @'
+          Remove caller-working-directory authority from the report comparison helper, rebase relative report roots from the helper project folder, fail closed on output-root errors, add cross-working-directory verification, and preserve NetLossDoctor v2.10.0 diagnostic behavior.
+
+          Copyright © 2026 Gateway Information Group LLC. All rights reserved.
+          '@
+          git commit -m "Keep NetLossDoctor comparison outputs project-local" -m $body
+          git push origin HEAD:agent/comparison-root-hardening-20260810
+
+# Copyright © 2026 Gateway Information Group LLC. All rights reserved.
