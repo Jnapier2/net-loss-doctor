@@ -23,5 +23,21 @@ jobs:
       - name: Parse source and enforce safety invariants
         shell: powershell
         run: .\tests\Test-SafetyContracts.ps1
+      - name: Verify canonical launcher contract
+        shell: powershell
+        run: .\tests\Test-LauncherContract.ps1
+      - name: Launch from an unrelated working directory
+        shell: powershell
+        run: |
+          $caller = Join-Path $env:RUNNER_TEMP 'netlossdoctor-foreign-cwd'
+          New-Item -ItemType Directory -Path $caller -Force | Out-Null
+          $command = '"{0}\Start-NetLossDoctor.cmd" -Mode standard -DryRun' -f $env:GITHUB_WORKSPACE
+          $process = Start-Process -FilePath 'cmd.exe' -ArgumentList @('/d','/c',$command) -WorkingDirectory $caller -NoNewWindow -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "NetLossDoctor launcher smoke failed with exit code $($process.ExitCode)." }
+          foreach ($name in @('exports','reports','logs','state','temp','diagnostics')) {
+            if (Test-Path -LiteralPath (Join-Path $caller $name)) {
+              throw "NetLossDoctor wrote $name under the caller working directory."
+            }
+          }
 
 # Copyright © 2026 Gateway Information Group LLC. All rights reserved.
