@@ -3,23 +3,46 @@
   "project": "NetLossDoctor",
   "project_slug": "net-loss-doctor",
   "version": "2.10.0",
-  "build_id": "NLD-2.10.0-PUBLIC-20260810-02",
+  "build_id": "NLD-2.10.0-PUBLIC-20260814-03",
   "status": "current-public-source",
-  "parameter_baseline": "2.17.6",
-  "parameter_package_sha256": "5dd39656afa5e8bcd0159e5ffa163d4de92a9ad4cb05c26aa63acf424ffe371f",
+  "parameter_baseline": "2.17.9",
+  "parameter_package_sha256": "fafe3f4a972b1f4def6e10faee7febc3c75154b8b346949991bb9d86e8a610df",
   "canonical_entrypoint": "Start-NetLossDoctor.cmd",
   "backend_target": "NetLossDoctor.ps1",
-  "project_root_resolution": "validated NLD_HOME override or launcher/script location; caller CWD is not authority",
+  "project_root_resolution": "launcher changes to its own directory; collector then accepts a validated NLD_HOME override or its script location; caller CWD is not authority",
   "runtime_owned_output_roots": [
     "exports/NetLossDoctor_Reports"
   ],
   "external_output_binding": "absolute -ReportsRoot supplied explicitly by the user",
-  "output_failure_policy": "fail_closed_no_cwd_desktop_or_os_temp_final_output_fallback",
+  "output_failure_policy": "fail_closed_no_cwd_desktop_user_profile_or_os_temp_final_output_fallback",
   "runtime_identity_gate": {
-    "status": "not_implemented_in_public_v2.10.0_source",
-    "claim_boundary": "This metadata file does not substitute for VERSION.txt, MANIFEST.json, PACKAGE_METADATA.json, or managed-file startup verification."
+    "status": "not_required_for_current_public_source",
+    "reason": "NetLossDoctor is a read-only diagnostic with no credentials, authenticated API preflight, financial activity, or remote account authority.",
+    "boundary": "This source metadata is not a substitute for a sealed package identity gate if a future build adds credentials or authenticated operations."
   },
-  "behavior_change": "project-root and final-output containment hardening only",
+  "file_inventory_and_consolidation": {
+    "status": "reviewed_against_parameter_baseline_2.17.9",
+    "canonical_launcher_count": 1,
+    "runtime_engines": [
+      "NetLossDoctor.ps1"
+    ],
+    "distinct_supporting_capabilities": [
+      "Compare-NetLossDoctorReports.ps1",
+      "tests/Test-SafetyContracts.ps1",
+      "tests/Test-LauncherContract.ps1"
+    ],
+    "exact_duplicate_files_detected": 0,
+    "functional_duplicates_removed": 0,
+    "preserved_reason": "diagnostic collection, report comparison, safety verification, and launcher verification are separate capabilities"
+  },
+  "launch_verification": {
+    "canonical_launcher": "Start-NetLossDoctor.cmd",
+    "root_relative": true,
+    "argument_forwarding": true,
+    "foreign_working_directory_ci": true,
+    "caller_working_directory_output_allowed": false
+  },
+  "behavior_change": "canonical-launcher root authority, parameter-baseline metadata, and launch verification only",
   "network_configuration_changes": false,
   "elevation_required": false,
   "rights_holder": "Gateway Information Group LLC",
