@@ -1,8 +1,21 @@
 @echo off
-setlocal
-where powershell.exe >nul 2>&1 || (
-  echo Windows PowerShell was not found on PATH.
+REM Copyright 2026 Gateway Information Group LLC. All rights reserved.
+setlocal EnableExtensions DisableDelayedExpansion
+cd /d "%~dp0" || (
+  echo ERROR: The NetLossDoctor project folder could not be opened.
   exit /b 2
 )
-powershell.exe -NoLogo -NoProfile -File "%~dp0NetLossDoctor.ps1" %*
-exit /b %ERRORLEVEL%
+
+set "NLD_SCRIPT=%~dp0NetLossDoctor.ps1"
+if not exist "%NLD_SCRIPT%" (
+  echo ERROR: NetLossDoctor.ps1 is missing beside this launcher.
+  exit /b 2
+)
+
+where powershell.exe >nul 2>&1 || (
+  echo ERROR: Windows PowerShell 5.1 was not found on PATH.
+  exit /b 3
+)
+
+powershell.exe -NoLogo -NoProfile -File "%NLD_SCRIPT%" %*
+exit /b %errorlevel%
