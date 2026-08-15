@@ -31,9 +31,14 @@ jobs:
         run: |
           $caller = Join-Path $env:RUNNER_TEMP 'netlossdoctor-foreign-cwd'
           New-Item -ItemType Directory -Path $caller -Force | Out-Null
-          $command = '"{0}\Start-NetLossDoctor.cmd" -Mode standard -DryRun' -f $env:GITHUB_WORKSPACE
-          $process = Start-Process -FilePath 'cmd.exe' -ArgumentList @('/d','/c',$command) -WorkingDirectory $caller -NoNewWindow -Wait -PassThru
-          if ($process.ExitCode -ne 0) { throw "NetLossDoctor launcher smoke failed with exit code $($process.ExitCode)." }
+          Push-Location $caller
+          try {
+            & "$env:GITHUB_WORKSPACE\Start-NetLossDoctor.cmd" -Mode standard -DryRun
+            $launchExit = $LASTEXITCODE
+          } finally {
+            Pop-Location
+          }
+          if ($launchExit -ne 0) { throw "NetLossDoctor launcher smoke failed with exit code $launchExit." }
           foreach ($name in @('exports','reports','logs','state','temp','diagnostics')) {
             if (Test-Path -LiteralPath (Join-Path $caller $name)) {
               throw "NetLossDoctor wrote $name under the caller working directory."
