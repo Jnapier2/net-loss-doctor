@@ -5,6 +5,11 @@ param()
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 
+# Keep isolated child checks in the PowerShell host running this suite.
+$testShellName = if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh.exe' } else { 'powershell.exe' }
+$testShell = Join-Path $PSHOME $testShellName
+if (-not (Test-Path -LiteralPath $testShell -PathType Leaf)) { throw 'Current PowerShell host executable was not found.' }
+
 function Assert-True {
     param([bool]$Condition, [string]$Message)
     if (-not $Condition) { throw $Message }
@@ -209,7 +214,7 @@ try {
     New-Item -ItemType Directory -Path $crossCwd -Force | Out-Null
     $env:NLD_HOME = Join-Path $crossCwd 'stale-home'
     Set-Location -LiteralPath $crossCwd
-    $dryOutput = (& powershell.exe -NoLogo -NoProfile -File $enginePath -Mode standard -DryRun 2>&1 | Out-String)
+    $dryOutput = (& $testShell -NoLogo -NoProfile -File $enginePath -Mode standard -DryRun 2>&1 | Out-String)
     $dryExit = $LASTEXITCODE
     Assert-True ($dryExit -eq 0) ("Cross-working-directory dry run failed with exit code {0}: {1}" -f $dryExit, $dryOutput)
     $expectedRoot = [IO.Path]::GetFullPath($repo)
@@ -235,7 +240,7 @@ try {
     $env:NLD_HOME = Join-Path $compareFixtureRoot 'stale-home'
     Set-Location -LiteralPath $compareCallerRoot
     $copiedCompare = Join-Path $compareToolRoot 'Compare-NetLossDoctorReports.ps1'
-    $compareOutput = (& powershell.exe -NoLogo -NoProfile -File $copiedCompare -Days 1 2>&1 | Out-String)
+    $compareOutput = (& $testShell -NoLogo -NoProfile -File $copiedCompare -Days 1 2>&1 | Out-String)
     $compareExit = $LASTEXITCODE
     Assert-True ($compareExit -eq 0) ("Cross-working-directory comparison failed with exit code {0}: {1}" -f $compareExit, $compareOutput)
     $expectedCompareReports = Join-Path (Join-Path $compareToolRoot 'exports') 'NetLossDoctor_Reports'
