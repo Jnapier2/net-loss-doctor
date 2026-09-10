@@ -26,6 +26,9 @@ jobs:
       - name: Verify canonical launcher contract
         shell: powershell
         run: .\tests\Test-LauncherContract.ps1
+      - name: Verify isolated contracts in PowerShell 7
+        shell: pwsh
+        run: .\tests\Test-SafetyContracts.ps1
       - name: Launch from an unrelated working directory
         shell: powershell
         run: |
